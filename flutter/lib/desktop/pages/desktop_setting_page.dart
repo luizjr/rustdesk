@@ -1114,7 +1114,7 @@ class _AboutState extends State<_About> {
                   Text('Build Date: $buildDate').marginSymmetric(vertical: 4.0),
                   InkWell(
                       onTap: () {
-                        launchUrlString('https://rustdesk.com/privacy');
+                        launchUrlString('https://megasoft.com.br/privacy');
                       },
                       child: const Text(
                         'Privacy Statement',
@@ -1122,7 +1122,7 @@ class _AboutState extends State<_About> {
                       ).marginSymmetric(vertical: 4.0)),
                   InkWell(
                       onTap: () {
-                        launchUrlString('https://rustdesk.com');
+                        launchUrlString('https://megasoft.com.br');
                       },
                       child: const Text(
                         'Website',
@@ -1139,7 +1139,7 @@ class _AboutState extends State<_About> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Copyright © 2022 Purslane Ltd.\n$license',
+                                'Copyright © 2022 Megasoft.\n$license',
                                 style: const TextStyle(color: Colors.white),
                               ),
                               const Text(

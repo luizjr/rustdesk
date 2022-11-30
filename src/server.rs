@@ -85,8 +85,10 @@ pub fn new() -> ServerPtr {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         server.add_service(Box::new(clipboard_service::new()));
-        server.add_service(Box::new(input_service::new_cursor()));
-        server.add_service(Box::new(input_service::new_pos()));
+        if !video_service::capture_cursor_embeded() {
+            server.add_service(Box::new(input_service::new_cursor()));
+            server.add_service(Box::new(input_service::new_pos()));
+        }
     }
     Arc::new(RwLock::new(server))
 }
@@ -377,7 +379,6 @@ pub async fn start_server(is_server: bool) {
         #[cfg(windows)]
         crate::platform::windows::bootstrap();
         input_service::fix_key_down_timeout_loop();
-        allow_err!(video_service::check_init().await);
         #[cfg(target_os = "macos")]
         tokio::spawn(async { sync_and_watch_config_dir().await });
         crate::RendezvousMediator::start_all().await;

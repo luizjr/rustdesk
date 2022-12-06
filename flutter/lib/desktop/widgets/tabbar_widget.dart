@@ -266,7 +266,8 @@ class DesktopTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       Obx(() => Offstage(
-          offstage: !stateGlobal.showTabBar.isTrue,
+          offstage: !stateGlobal.showTabBar.isTrue ||
+              (kUseCompatibleUiMode && isHideSingleItem()),
           child: SizedBox(
             height: _kTabBarHeight,
             child: Column(
@@ -333,6 +334,15 @@ class DesktopTab extends StatelessWidget {
             children: state.value.tabs
                 .map((tab) => tab.page)
                 .toList(growable: false))));
+  }
+
+  /// Check whether to show ListView
+  ///
+  /// Conditions:
+  /// - hide single item when only has one item (home) on [DesktopTabPage].
+  bool isHideSingleItem() {
+    return state.value.tabs.length == 1 &&
+        controller.tabType == DesktopTabType.main;
   }
 
   Widget _buildBar() {
@@ -407,6 +417,7 @@ class DesktopTab extends StatelessWidget {
                                     unSelectedTabBackgroundColor))),
                   ],
                 ))),
+        // hide simulated action buttons when we in compatible ui mode, because of reusing system title bar.
         WindowActionPanel(
           isMainWindow: isMainWindow,
           tabType: tabType,
@@ -530,50 +541,59 @@ class WindowActionPanelState extends State<WindowActionPanel>
       children: [
         Offstage(offstage: widget.tail == null, child: widget.tail),
         Offstage(
-            offstage: !widget.showMinimize,
-            child: ActionIcon(
-              message: 'Minimize',
-              icon: IconFont.min,
-              onTap: () {
-                if (widget.isMainWindow) {
-                  windowManager.minimize();
-                } else {
-                  WindowController.fromWindowId(windowId!).minimize();
-                }
-              },
-              isClose: false,
-            )),
-        Offstage(
-            offstage: !widget.showMaximize,
-            child: Obx(() => ActionIcon(
-                  message: widget.isMaximized.value ? "Restore" : "Maximize",
-                  icon: widget.isMaximized.value
-                      ? IconFont.restore
-                      : IconFont.max,
-                  onTap: _toggleMaximize,
-                  isClose: false,
-                ))),
-        Offstage(
-            offstage: !widget.showClose,
-            child: ActionIcon(
-              message: 'Close',
-              icon: IconFont.close,
-              onTap: () async {
-                final res = await widget.onClose?.call() ?? true;
-                if (res) {
-                  // hide for all window
-                  // note: the main window can be restored by tray icon
-                  Future.delayed(Duration.zero, () async {
-                    if (widget.isMainWindow) {
-                      await windowManager.close();
-                    } else {
-                      await WindowController.fromWindowId(windowId!).close();
-                    }
-                  });
-                }
-              },
-              isClose: true,
-            )),
+          offstage: kUseCompatibleUiMode,
+          child: Row(
+            children: [
+              Offstage(
+                  offstage: !widget.showMinimize,
+                  child: ActionIcon(
+                    message: 'Minimize',
+                    icon: IconFont.min,
+                    onTap: () {
+                      if (widget.isMainWindow) {
+                        windowManager.minimize();
+                      } else {
+                        WindowController.fromWindowId(windowId!).minimize();
+                      }
+                    },
+                    isClose: false,
+                  )),
+              Offstage(
+                  offstage: !widget.showMaximize,
+                  child: Obx(() => ActionIcon(
+                        message:
+                            widget.isMaximized.value ? "Restore" : "Maximize",
+                        icon: widget.isMaximized.value
+                            ? IconFont.restore
+                            : IconFont.max,
+                        onTap: _toggleMaximize,
+                        isClose: false,
+                      ))),
+              Offstage(
+                  offstage: !widget.showClose,
+                  child: ActionIcon(
+                    message: 'Close',
+                    icon: IconFont.close,
+                    onTap: () async {
+                      final res = await widget.onClose?.call() ?? true;
+                      if (res) {
+                        // hide for all window
+                        // note: the main window can be restored by tray icon
+                        Future.delayed(Duration.zero, () async {
+                          if (widget.isMainWindow) {
+                            await windowManager.close();
+                          } else {
+                            await WindowController.fromWindowId(windowId!)
+                                .close();
+                          }
+                        });
+                      }
+                    },
+                    isClose: true,
+                  ))
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1010,8 +1030,8 @@ class AddButton extends StatelessWidget {
     return ActionIcon(
         message: 'New Connection',
         icon: IconFont.add,
-        onTap: () =>
-            rustDeskWinManager.call(WindowType.Main, "main_window_on_top", ""),
+        onTap: () => rustDeskWinManager.call(
+            WindowType.Main, kWindowMainWindowOnTop, ""),
         isClose: false);
   }
 }

@@ -339,12 +339,14 @@ pub fn event_to_key_event(event: &Event) -> Option<KeyEvent> {
             translate_keyboard_mode(event, key_event)?
         }
         _ => {
-            let res;
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            res = legacy_keyboard_mode(event, key_event)?;
+            {
+                legacy_keyboard_mode(event, key_event)?
+            }
             #[cfg(any(target_os = "android", target_os = "ios"))]
-            res = None;
-            res
+            {
+                None?
+            }
         }
     };
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
@@ -633,6 +635,8 @@ pub fn map_keyboard_mode(event: &Event, mut key_event: KeyEvent) -> Option<KeyEv
         "macos" => rdev::linux_code_to_macos_code(event.code as _)?,
         _ => event.code as _,
     };
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let keycode = 0;
 
     key_event.set_chr(keycode);
     Some(key_event)

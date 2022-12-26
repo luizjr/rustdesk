@@ -173,7 +173,7 @@ impl<T: InvokeUiSession> Session<T> {
         self.send(Data::Message(msg));
     }
 
-    pub fn get_audit_server(&self) -> String {
+    pub fn get_audit_server(&self, typ: String) -> String {
         if self.lc.read().unwrap().conn_id <= 0
             || LocalConfig::get_option("access_token").is_empty()
         {
@@ -182,11 +182,12 @@ impl<T: InvokeUiSession> Session<T> {
         crate::get_audit_server(
             Config::get_option("api-server"),
             Config::get_option("custom-rendezvous-server"),
+            typ,
         )
     }
 
     pub fn send_note(&self, note: String) {
-        let url = self.get_audit_server();
+        let url = self.get_audit_server("conn".to_string());
         let id = self.id.clone();
         let conn_id = self.lc.read().unwrap().conn_id;
         std::thread::spawn(move || {
@@ -657,10 +658,7 @@ impl<T: InvokeUiSession> Interface for Session<T> {
     }
 
     fn msgbox(&self, msgtype: &str, title: &str, text: &str, link: &str) {
-        let direct = self.lc.read().unwrap().direct.unwrap_or_default();
-        let received = self.lc.read().unwrap().received;
-        let retry_for_relay = direct && !received;
-        let retry = check_if_retry(msgtype, title, text, retry_for_relay);
+        let retry = check_if_retry(msgtype, title, text);
         self.ui_handler.msgbox(msgtype, title, text, link, retry);
     }
 
@@ -746,12 +744,6 @@ impl<T: InvokeUiSession> Interface for Session<T> {
             });
             handle_test_delay(t, peer).await;
         }
-    }
-
-    fn set_connection_info(&mut self, direct: bool, received: bool) {
-        let mut lc = self.lc.write().unwrap();
-        lc.direct = Some(direct);
-        lc.received = received;
     }
 
     fn set_force_relay(&mut self, direct: bool, received: bool) {

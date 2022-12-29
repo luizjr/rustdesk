@@ -509,13 +509,12 @@ impl Config {
     }
 
     #[inline]
-    pub fn get_any_listen_addr() -> SocketAddr {
-        SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
-    }
-
-    #[inline]
-    pub fn get_any_listen_addr_v6() -> SocketAddr {
-        SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+    pub fn get_any_listen_addr(is_ipv4: bool) -> SocketAddr {
+        if is_ipv4 {
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+        } else {
+            SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+        }
     }
 
     pub fn get_rendezvous_server() -> String {
@@ -996,6 +995,8 @@ pub struct LocalConfig {
     #[serde(default)]
     remote_id: String, // latest used one
     #[serde(default)]
+    kb_layout_type: String,
+    #[serde(default)]
     size: Size,
     #[serde(default)]
     pub fav: Vec<String>,
@@ -1013,6 +1014,16 @@ impl LocalConfig {
 
     fn store(&self) {
         Config::store_(self, "_local");
+    }
+
+    pub fn get_kb_layout_type() -> String {
+        LOCAL_CONFIG.read().unwrap().kb_layout_type.clone()
+    }
+
+    pub fn set_kb_layout_type(kb_layout_type: String) {
+        let mut config = LOCAL_CONFIG.write().unwrap();
+        config.kb_layout_type = kb_layout_type;
+        config.store();
     }
 
     pub fn get_size() -> Size {

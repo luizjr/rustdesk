@@ -23,6 +23,7 @@ import '../../models/model.dart';
 import '../../models/platform_model.dart';
 import '../../common/shared_state.dart';
 import '../widgets/remote_menubar.dart';
+import '../widgets/kb_layout_type_chooser.dart';
 
 bool _isCustomCursorInited = false;
 final SimpleWrapper<bool> _firstEnterImage = SimpleWrapper(false);
@@ -95,6 +96,10 @@ class _RemotePageState extends State<RemotePage>
     _initStates(widget.id);
     _ffi = FFI();
     Get.put(_ffi, tag: widget.id);
+    _ffi.imageModel.addCallbackOnFirstImage((String peerId) {
+      showKBLayoutTypeChooserIfNeeded(
+          _ffi.ffiModel.pi.platform, _ffi.dialogManager);
+    });
     _ffi.start(widget.id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
@@ -143,6 +148,16 @@ class _RemotePageState extends State<RemotePage>
   void onWindowFocus() {
     super.onWindowFocus();
     // See [onWindowBlur].
+    if (Platform.isWindows) {
+      _isWindowBlur = false;
+    }
+  }
+
+  @override
+  void onWindowRestore() {
+    super.onWindowRestore();
+    // On windows, we use `onWindowRestore` way to handle window restore from
+    // a minimized state.
     if (Platform.isWindows) {
       _isWindowBlur = false;
     }
@@ -279,6 +294,16 @@ class _RemotePageState extends State<RemotePage>
             onEnter: enterView,
             onExit: leaveView,
             onPointerDown: (event) {
+              // A double check for blur status.
+              // Note: If there's an `onPointerDown` event is triggered, `_isWindowBlur` is expected being false.
+              // Sometimes the system does not send the necessary focus event to flutter. We should manually
+              // handle this inconsistent status by setting `_isWindowBlur` to false. So we can
+              // ensure the grab-key thread is running when our users are clicking the remote canvas.
+              if (_isWindowBlur) {
+                debugPrint(
+                    "Unexpected status: onPointerDown is triggered while the remote window is in blur status");
+                _isWindowBlur = false;
+              }
               if (!_rawKeyFocusNode.hasFocus) {
                 _rawKeyFocusNode.requestFocus();
               }

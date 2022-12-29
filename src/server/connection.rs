@@ -523,6 +523,8 @@ impl Connection {
             rdev::set_dw_mouse_extra_info(enigo::ENIGO_INPUT_EXTRA_VALUE);
             rdev::set_dw_keyboard_extra_info(enigo::ENIGO_INPUT_EXTRA_VALUE);
         }
+        #[cfg(target_os = "macos")]
+        reset_input_ondisconn();
         loop {
             match receiver.recv_timeout(std::time::Duration::from_millis(500)) {
                 Ok(v) => match v {
@@ -1148,7 +1150,7 @@ impl Connection {
                 }
                 _ => {}
             }
-            if !crate::is_ip(&lr.username) && lr.username != Config::get_id() {
+            if !hbb_common::is_ipv4_str(&lr.username) && lr.username != Config::get_id() {
                 self.send_login_error("Offline").await;
             } else if password::approve_mode() == ApproveMode::Click
                 || password::approve_mode() == ApproveMode::Both && !password::has_valid_password()

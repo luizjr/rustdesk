@@ -903,7 +903,7 @@ class _TabState extends State<_Tab> with RestorationMixin {
                       children: [
                         _buildTabContent(),
                         Obx((() => _CloseButton(
-                              visiable: hover.value && widget.closable,
+                              visible: hover.value && widget.closable,
                               tabSelected: isSelected,
                               onClose: () => widget.onClose(),
                             )))
@@ -935,13 +935,13 @@ class _TabState extends State<_Tab> with RestorationMixin {
 }
 
 class _CloseButton extends StatelessWidget {
-  final bool visiable;
+  final bool visible;
   final bool tabSelected;
   final Function onClose;
 
   const _CloseButton({
     Key? key,
-    required this.visiable,
+    required this.visible,
     required this.tabSelected,
     required this.onClose,
   }) : super(key: key);
@@ -951,7 +951,7 @@ class _CloseButton extends StatelessWidget {
     return SizedBox(
         width: _kIconSize,
         child: Offstage(
-          offstage: !visiable,
+          offstage: !visible,
           child: InkWell(
             customBorder: const RoundedRectangleBorder(),
             onTap: () => onClose(),
